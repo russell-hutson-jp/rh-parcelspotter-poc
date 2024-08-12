@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Capture and Postcode Detection</title>
+    <link rel="stylesheet" href="https://unpkg.com/picocss@1.0.0/dist/pico.min.css">
+    <style>
+        .captured {
+            width: 50%;
+            margin: 10px 0;
+        }
+        #corrected-image-container {
+            margin-top: 20px;
+        }
+        #postcode {
+            font-size: 2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <video id="camera" autoplay></video>
+    <button id="capture">Capture Photo</button>
+    <canvas id="photo" style="display: none;"></canvas>
+    <div id="corrected-image-container"></div>
+    <div id="postcode"></div>
+    <div id="status"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.1/dist/tesseract.min.js"></script>
+    <script src="https://docs.opencv.org/4.x/opencv.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

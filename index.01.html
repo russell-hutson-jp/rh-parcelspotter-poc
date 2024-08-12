@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parcel Detection with Teachable Machine</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #222;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #webcam {
+            transform: scaleX(-1);
+        }
+        #message {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <video id="webcam" autoplay playsinline width="640" height="480"></video>
+    <div id="message">Loading model...</div>
+
+    <script type="text/javascript">
+        const URL = "https://teachablemachine.withgoogle.com/models/E7DzqSvZl/";
+        let model, webcam, maxPredictions;
+
+        async function init() {
+            // Load the model and metadata
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            // Setup the webcam
+            webcam = new tmImage.Webcam(640, 480, true); // width, height, flip
+            await webcam.setup(); // request access to the webcam
+            await webcam.play();
+            window.requestAnimationFrame(loop);
+
+            // Display webcam
+            document.getElementById("webcam").appendChild(webcam.canvas);
+            document.getElementById("message").textContent = "Detecting...";
+        }
+
+        async function loop() {
+            webcam.update(); // update the webcam frame
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            // Predict with the model
+            const prediction = await model.predict(webcam.canvas);
+
+            // Check for your specific class label
+            let parcelDetected = false;
+            for (let i = 0; i < maxPredictions; i++) {
+                if (prediction[i].className === "Parcel" && prediction[i].probability > 0.6) {
+                    parcelDetected = true;
+                    break;
+                }
+            }
+
+            const messageElement = document.getElementById('message');
+            if (parcelDetected) {
+                messageElement.textContent = "Parcel Detected!";
+                messageElement.style.color = "green";
+            } else {
+                messageElement.textContent = "No Parcel Detected.";
+                messageElement.style.color = "red";
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
