@@ -75,7 +75,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Font Awesome JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
-    <script src="postcodeData.js"></script> <!-- External data -->
+    <!--<script src="postcodeData.js"></script>--> <!-- External data -->
+    <script src="postCodeDataFromAPMS.js"></script> <!-- External data -->
 
     <script>
 
@@ -121,6 +122,7 @@
 
         recognition.onstart = () => {
             console.log('Speech recognition started');
+            beep();
             document.getElementById('result').innerHTML = '<p>Listening...</p>';
             document.getElementById('startButton').classList.add('d-none');
         };
@@ -139,25 +141,28 @@
                 return;
             }
 
-            const postcode = extractPostcode(speechResult);
+            var postcode = extractPostcode(speechResult);
             console.log('Extracted postcode:', postcode);
+            
 
             if (postcode) {
                 const data = findPostcodeData(postcode);
                 if (data) {
-                    const resultText = `${postcode} Round ${data.round}`;
+                    const round = cleanRoundName(data.round);
+                    const resultText = `${postcode} Round ${round}`;
                     document.getElementById('result').innerHTML = `<p>${resultText}</p>`;
                     lastSpokenMessage = postcode;
-                    lastSpokenRound = data.round;
-                    await speakResult(postcode, data.round, false);
+                    lastSpokenRound = round;
+                    await speakResult(postcode, round, false);
                     await speakMessage("Next postcode", true);
                 } else {
                     const formattedPostcode = formatPostcode(postcode);
-                    const notFoundText = `Postcode ${formattedPostcode} not found.`;
+                    const notFoundText = `Postcode ${postcode} not found.`;
+                    const notFoundSpeak = `Postcode ${formattedPostcode} not found.`;
                     document.getElementById('result').innerHTML = `<p>${notFoundText}</p>`;
-                    lastSpokenMessage = notFoundText;
+                    lastSpokenMessage = notFoundSpeak;
                     lastSpokenRound = '';
-                    await speakMessage(notFoundText, true);
+                    await speakMessage(notFoundSpeak, true);
                 }
             } else {
                 const noPostcodeText = 'No valid postcode recognized.';
@@ -185,9 +190,46 @@
             recognition.start();
         });
 
+        // Clean up the round name
+        function cleanRoundName(roundNo) {
+            roundNo = roundNo.toUpperCase();
+            roundNo = roundNo.replace("T12", "P12");   // Rename parcel T12 to P12
+            roundNo = roundNo.replace("T14", "P14");   // Rename parcel T14 to P14
+            roundNo = roundNo.replace("T15", "P15");   // Rename parcel T15 to P15
+            roundNo = roundNo.replace("RURAL ", "R");  // Abbreviate "RURAL " to "R"
+            roundNo = roundNo.replace("TOWN ", "T");   // Abbreviate "TOWN " to "T"
+
+            if (roundNo.length >= 3 && roundNo.substring(0, 3) === "BOX") {
+                roundNo = "BOX";  // Truncate rounds starting with "BOX" to be just "BOX"
+            }
+
+            if (roundNo === "FIRMS") {
+                roundNo = "FIRM";  // Truncate "FIRMS" to be "FIRM"
+            }
+
+            if (roundNo === "T28/FIRMS") {
+                roundNo = "T28";  // Truncate "T28/FIRMS" to "T28"
+            }
+
+            return roundNo;
+        }
+
+        function removeJEIfStarts(str) {
+            if (str.startsWith("JE") || str.startsWith("je")) {
+                return str.substring(2); // Remove the first two characters ("JE")
+            }
+            return str; // Return the original string if it doesn't start with "JE"
+        }
+
         function extractPostcode(text) {
+            text = text.replace(/\s+/g, '');
+            console.log('extractPostcode (whitespace removed): ',text);
+            text = removeJEIfStarts(text); // remove JE if it was spoken
+            console.log('extractPostcode (JE Removed): ',text);
             text = convertPhoneticAlphabet(text);
+            console.log('extractPostcode (phonetic): ',text);
             text = 'JE' + text.replace(/\s+/g, '');
+            console.log('extractPostcode (JE added): ',text);
             const postcodePattern = /\bJE\d{1,2}[A-Z]{2}\b/i;
             const match = text.match(postcodePattern);
             return match ? match[0].toUpperCase() : null;
@@ -208,7 +250,7 @@
                 const context = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = context.createOscillator();
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(1000, context.currentTime);
+                oscillator.frequency.setValueAtTime(2000, context.currentTime);
                 oscillator.connect(context.destination);
                 oscillator.start();
                 setTimeout(() => {
@@ -226,7 +268,7 @@
         function formatPostcode(postcode) {
             console.log(`formatPostcode(${postcode})`);
             const formattedPostcode = postcode.split('').map(char => {
-                return isNaN(char) ? " "+char+" " : " " + numberToWords(parseInt(char)) + " ";
+                return isNaN(char) ? " " + char + " " : " " + numberToWords(parseInt(char)) + " ";
             }).join('');
 
             return formattedPostcode;
@@ -235,7 +277,7 @@
         async function speakResult(postcode, round, beepFirst) {
             console.log("speakResult: ", postcode, " / ", round);
             if (beepFirst) {
-                await beep();
+                //await beep();
             }
 
             const formattedPostcode = formatPostcode(postcode);
@@ -252,7 +294,7 @@
         async function speakMessage(message, beepFirst) {
             console.log("speakMessage: ", message);
             if (beepFirst) {
-                await beep();
+            //    await beep();
             }
 
             const msg = new SpeechSynthesisUtterance(message);
