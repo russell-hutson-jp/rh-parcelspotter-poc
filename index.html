@@ -1,94 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Postcode Recognition App</title>
-    <link rel="stylesheet" href="https://unpkg.com/picocss@latest/dist/pico.min.css">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
     <style>
         body {
+            background-color: #f8f9fa;
             text-align: center;
-            margin-top: 50px;
+            padding-top: 50px;
         }
+
         #result p {
             font-size: 1.5em;
             margin: 0;
-        }
-        #result {
-            margin-top: 20px;
-            font-size: 1.2em;
             color: #333;
         }
+
         #startButton {
             margin-top: 20px;
             padding: 10px 20px;
             font-size: 1.2em;
         }
+
         #examples {
             margin-top: 30px;
             font-size: 1.2em;
             color: #555;
         }
+
         #instructions {
-            margin-top: 20px;
             font-size: 1.2em;
             color: #666;
         }
+
+        .help-icon {
+            font-size: 1.5em;
+            cursor: pointer;
+        }
     </style>
 </head>
+
 <body>
-    <header>
-        <h1>Postcode Recognition App</h1>
-    </header>
-    <main>
-        <div id="instructions">
-            <p>You can say "repeat" or "again" to hear the last spoken postcode and round again.</p>
-        </div>
-        <div id="result"></div>
-        <button id="startButton">Start Speech Recognition</button>
-        <div id="examples">
-            <h2>Try these example postcodes:</h2>
-            <ul id="exampleList"></ul>
-        </div>
-    </main>
+    <div class="container">
+        <header class="mb-4">
+            <h1 class="display-5">Postcode Recognition App</h1>
+        </header>
+        <main>
+            <div class="d-flex justify-content-center align-items-center">
+                <button class="btn btn-link p-0 m-0 help-icon" data-bs-toggle="collapse" data-bs-target="#instructions">
+                    <i class="fas fa-question-circle"></i>
+                </button>
+                <div id="instructions" class="alert alert-info collapse">
+                    <p>You can say "repeat" or "again" to hear the last spoken postcode and round again.</p>
+                    <p>The phonetic alphabet is also recognized. For example, "Alpha" will be interpreted as "A".</p>
+                </div>
+            </div>
+            <div id="result" class="my-4"></div>
+            <button id="startButton" class="btn btn-primary">Start Speech Recognition</button>
+            <div id="examples" class="mt-5">
+                <h2>Try these example postcodes:</h2>
+                <ul id="exampleList" class="list-group list-group-flush mt-3"></ul>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap 5 JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Font Awesome JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+    <script src="postcodeData.js"></script> <!-- External data -->
 
     <script>
-        // Example data array of Jersey postcodes with spaces removed
-        const postcodeData = [
-            { postcode: "JE21AA", round: "R01" },
-            { postcode: "JE21AB", round: "R02" },
-            { postcode: "JE31AA", round: "R03" },
-            { postcode: "JE31AB", round: "R04" },
-            { postcode: "JE11AA", round: "R05" },
-            { postcode: "JE12AA", round: "R06" }
-        ];
 
         // Example postcodes for testing, including some not found
         const examplePostcodes = [
-            "JE21AA", "JE21AB", "JE31AA", "JE31AB", "JE11AA", "JE12AA",
-            "JE99ZZ", "JE13CC", "JE00XX", "JE99AA", "JE20YY"
+            "21AA", "21AB", "31AA", "31AB", "11AA", "12AA",
+            "99ZZ", "13CC", "00XX", "99AA", "20YY"
         ];
 
         // Phonetic alphabet mapping
         const phoneticAlphabet = {
-            'Alpha': 'A', 'Bravo': 'B', 'Charlie': 'C', 'Delta': 'D',
-            'Echo': 'E', 'Foxtrot': 'F', 'Golf': 'G', 'Hotel': 'H',
-            'India': 'I', 'Juliet': 'J', 'Kilo': 'K', 'Lima': 'L',
-            'Mike': 'M', 'November': 'N', 'Oscar': 'O', 'Papa': 'P',
-            'Quebec': 'Q', 'Romeo': 'R', 'Sierra': 'S', 'Tango': 'T',
-            'Uniform': 'U', 'Victor': 'V', 'Whiskey': 'W', 'X-ray': 'X',
-            'Yankee': 'Y', 'Zulu': 'Z'
+            'alpha': 'A', 'bravo': 'B', 'charlie': 'C', 'delta': 'D',
+            'echo': 'E', 'foxtrot': 'F', 'golf': 'G', 'hotel': 'H',
+            'india': 'I', 'juliet': 'J', 'kilo': 'K', 'lima': 'L',
+            'mike': 'M', 'november': 'N', 'oscar': 'O', 'papa': 'P',
+            'quebec': 'Q', 'romeo': 'R', 'sierra': 'S', 'tango': 'T',
+            'uniform': 'U', 'victor': 'V', 'whiskey': 'W', 'x-ray': 'X',
+            'yankee': 'Y', 'zulu': 'Z'
         };
+
 
         // Check for browser support
         if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
             alert('Speech Recognition API is not supported in this browser.');
-            document.getElementById('result').innerHTML = '<p>Speech Recognition API not supported.</p>';
+            document.getElementById('result').innerHTML = '<p class="text-danger">Speech Recognition API not supported.</p>';
             throw new Error('Speech Recognition API not supported.');
         }
         if (!('speechSynthesis' in window)) {
             alert('Speech Synthesis API is not supported in this browser.');
-            document.getElementById('result').innerHTML = '<p>Speech Synthesis API not supported.</p>';
+            document.getElementById('result').innerHTML = '<p class="text-danger">Speech Synthesis API not supported.</p>';
             throw new Error('Speech Synthesis API not supported.');
         }
 
@@ -105,14 +122,13 @@
         recognition.onstart = () => {
             console.log('Speech recognition started');
             document.getElementById('result').innerHTML = '<p>Listening...</p>';
-            beep();
+            document.getElementById('startButton').classList.add('d-none');
         };
 
         recognition.onresult = async (event) => {
             const speechResult = event.results[0][0].transcript;
             console.log('Speech result:', speechResult);
 
-            // Check for repeat or again commands
             if (/repeat|again/i.test(speechResult)) {
                 console.log('Repeat command detected');
                 if (lastSpokenMessage) {
@@ -129,35 +145,40 @@
             if (postcode) {
                 const data = findPostcodeData(postcode);
                 if (data) {
-                    const resultText = `${postcode}\n${data.round}`;
+                    const resultText = `${postcode} Round ${data.round}`;
                     document.getElementById('result').innerHTML = `<p>${resultText}</p>`;
                     lastSpokenMessage = postcode;
                     lastSpokenRound = data.round;
                     await speakResult(postcode, data.round, false);
+                    await speakMessage("Next postcode", true);
                 } else {
-                    const notFoundText = `Postcode ${postcode} not found.`;
+                    const formattedPostcode = formatPostcode(postcode);
+                    const notFoundText = `Postcode ${formattedPostcode} not found.`;
                     document.getElementById('result').innerHTML = `<p>${notFoundText}</p>`;
                     lastSpokenMessage = notFoundText;
                     lastSpokenRound = '';
-                    await speakResult(notFoundText, '', true);
+                    await speakMessage(notFoundText, true);
                 }
             } else {
                 const noPostcodeText = 'No valid postcode recognized.';
                 document.getElementById('result').innerHTML = `<p>${noPostcodeText}</p>`;
                 lastSpokenMessage = noPostcodeText;
                 lastSpokenRound = '';
-                await speakResult(noPostcodeText, '', true);
+                await speakMessage(noPostcodeText, true);
             }
+
         };
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
             document.getElementById('result').innerHTML = `<p>Error occurred in speech recognition: ${event.error}</p>`;
+            document.getElementById('startButton').classList.remove('d-none');
         };
 
-        recognition.onend = () => {
+        recognition.onend = async () => {
             console.log('Speech recognition ended');
-            //document.getElementById('result').innerHTML += '<p>Listening again...</p>';
+            await delay(2000); // 1 second delay
+            recognition.start(); // Restart recognition after delay and beep
         };
 
         document.getElementById('startButton').addEventListener('click', () => {
@@ -165,19 +186,15 @@
         });
 
         function extractPostcode(text) {
-            // Convert phonetic alphabet to letters and remove spaces
             text = convertPhoneticAlphabet(text);
-            // Remove spaces from the input for matching
-            text = text.replace(/\s+/g, '');
-            // Regex for UK postcode, including Jersey JE prefix, with spaces removed
+            text = 'JE' + text.replace(/\s+/g, '');
             const postcodePattern = /\bJE\d{1,2}[A-Z]{2}\b/i;
             const match = text.match(postcodePattern);
             return match ? match[0].toUpperCase() : null;
         }
 
         function convertPhoneticAlphabet(text) {
-            // Remove extra spaces and split into words
-            const words = text.trim().split(/\s+/);
+            const words = text.trim().toLowerCase().split(/\s+/);
             const converted = words.map(word => phoneticAlphabet[word] || word).join('');
             return converted;
         }
@@ -191,93 +208,72 @@
                 const context = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = context.createOscillator();
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(1000, context.currentTime); // 1000 Hz
+                oscillator.frequency.setValueAtTime(1000, context.currentTime);
                 oscillator.connect(context.destination);
                 oscillator.start();
                 setTimeout(() => {
                     oscillator.stop();
                     resolve();
-                }, 100); // Beep duration in milliseconds
+                }, 200); // 200ms beep
             });
+        }
+
+        function numberToWords(num) {
+            const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+            return words[num];
         }
 
         function formatPostcode(postcode) {
-            // Format postcode with spaces correctly
-            return postcode.split('').map(char => {
-                if (/\d/.test(char)) {
-                    return convertDigitToWords(char);
-                }
-                return char;
-            }).join(' ').toUpperCase();
+            console.log(`formatPostcode(${postcode})`);
+            const formattedPostcode = postcode.split('').map(char => {
+                return isNaN(char) ? " "+char+" " : " " + numberToWords(parseInt(char)) + " ";
+            }).join('');
+
+            return formattedPostcode;
         }
 
-        function convertDigitToWords(digit) {
-            // Convert single digit to its spoken form
-            const digitsToWords = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-            return digitsToWords[parseInt(digit)];
-        }
-
-        async function speakResult(text, round, isError) {
-            if (!speechSynthesis) {
-                console.error('Speech Synthesis API is not available.');
-                return;
+        async function speakResult(postcode, round, beepFirst) {
+            console.log("speakResult: ", postcode, " / ", round);
+            if (beepFirst) {
+                await beep();
             }
 
-            const utteranceFormatted = new SpeechSynthesisUtterance(formatPostcode(text));
-            const utteranceRound = new SpeechSynthesisUtterance(round);
+            const formattedPostcode = formatPostcode(postcode);
+            console.log("formattedPostcode:", formattedPostcode);
 
-            return new Promise((resolve) => {
-                if (isError) {
-                    // Speak error messages as words
-                    const utteranceError = new SpeechSynthesisUtterance(text);
-                    utteranceError.onend = async () => {
-                        console.log('Error message spoken, beeping...');
-                        await beep();
-                        console.log('Beep done');
-                        setTimeout(() => {
-                            console.log('Restarting speech recognition...');
-                            recognition.start(); // Restart recognition after 3 seconds
-                            resolve();
-                        }, 3000); // 3 seconds delay
-                    };
-                    speechSynthesis.speak(utteranceError);
-                } else {
-                    // Speak postcodes with each part separated by spaces
-                    console.log('Formatted postcode:', utteranceFormatted.text); // Debugging statement
-                    
-                    utteranceFormatted.onend = async () => {
-                        console.log('Postcode spoken, beeping...');
-                        await beep();
-                        console.log('Beep done, speaking round...');
-                        speechSynthesis.speak(utteranceRound);
-                        utteranceRound.onend = () => {
-                            setTimeout(() => {
-                                console.log('Restarting speech recognition...');
-                                recognition.start(); // Restart recognition after 3 seconds
-                                resolve();
-                            }, 3000); // 3 seconds delay
-                        };
-                    };
-                    utteranceFormatted.onerror = (e) => {
-                        console.error('Error speaking postcode:', e);
-                        resolve();
-                    };
-                    speechSynthesis.speak(utteranceFormatted);
-                }
-            });
+            // . ! . ! adds some pause
+            const msg = new SpeechSynthesisUtterance((round.length > 0) ? `${formattedPostcode}  . ! . !   Round . ! ${round}` : `${formattedPostcode}`);
+
+
+            msg.lang = 'en-GB';
+            window.speechSynthesis.speak(msg);
         }
 
-        // Display example postcodes
-        function displayExamples() {
-            const exampleList = document.getElementById('exampleList');
-            examplePostcodes.forEach(postcode => {
-                const listItem = document.createElement('li');
-                listItem.textContent = postcode;
-                exampleList.appendChild(listItem);
-            });
+        async function speakMessage(message, beepFirst) {
+            console.log("speakMessage: ", message);
+            if (beepFirst) {
+                await beep();
+            }
+
+            const msg = new SpeechSynthesisUtterance(message);
+
+            msg.lang = 'en-GB';
+            window.speechSynthesis.speak(msg);
         }
 
-        displayExamples();
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Populate example postcodes list
+        const exampleList = document.getElementById('exampleList');
+        examplePostcodes.forEach(example => {
+            const li = document.createElement('li');
+            li.classList.add('list-group-item');
+            li.textContent = example;
+            exampleList.appendChild(li);
+        });
     </script>
 </body>
+
 </html>
